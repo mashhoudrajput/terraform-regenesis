@@ -89,8 +89,8 @@ variable "db_name" {
 }
 
 variable "db_secret_name" {
-  type    = string
-  default = "dev/rds-db-password"
+  description = "Name/ARN of an existing Secrets Manager secret that contains the DB credentials (JSON with username and password)"
+  type        = string
 }
 
 variable "rds_instance_class" {

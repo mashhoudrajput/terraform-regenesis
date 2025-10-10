@@ -56,25 +56,19 @@ resource "aws_ssm_document" "append_public_key" {
 }
 
 resource "aws_ssm_association" "deploy_private_to_bastion" {
-  name       = aws_ssm_document.write_private_key.name
-  targets = [
-    {
-      key    = "InstanceIds"
-      values = [aws_instance.bastion.id]
-    }
-  ]
-  wait_for_success_timeout = "600s"
+  name = aws_ssm_document.write_private_key.name
+  targets {
+    key    = "InstanceIds"
+    values = [aws_instance.bastion.id]
+  }
 }
 
 resource "aws_ssm_association" "deploy_public_to_app" {
-  name       = aws_ssm_document.append_public_key.name
-  targets = [
-    {
-      key    = "InstanceIds"
-      values = [aws_instance.app.id]
-    }
-  ]
-  wait_for_success_timeout = "600s"
+  name = aws_ssm_document.append_public_key.name
+  targets {
+    key    = "InstanceIds"
+    values = [aws_instance.app.id]
+  }
 }
 
 output "jump_public_key" {
