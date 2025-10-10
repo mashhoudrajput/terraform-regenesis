@@ -113,6 +113,12 @@ variable "create_nat_gateway" {
   default = true
 }
 
+variable "create_app2" {
+  description = "Whether to create a second app instance (queue). Set true for beta/prod where two app servers are desired."
+  type        = bool
+  default     = false
+}
+
 variable "bastion_allowed_cidr" {
   type    = string
   default = "0.0.0.0/0"

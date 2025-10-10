@@ -6,8 +6,8 @@
 resource "aws_db_subnet_group" "aurora" {
   name = "${local.environment}-aurora-subnet-group"
   subnet_ids = [
-    aws_subnet.private["10.0.11.0/24"].id,
-    aws_subnet.private["10.0.12.0/24"].id
+    element(values(aws_subnet.private), 0).id,
+    element(values(aws_subnet.private), 1).id
   ]
 
   tags = {

@@ -1,6 +1,6 @@
 # Terraform AWS Regenesis (compatible with Terraform >= 1.13.3)
 
-This repository contains Terraform code to provision a development environment for the "regenesis" application on AWS.
+This repository contains Terraform code to provision a betaelopment environment for the "regenesis" application on AWS.
 
 Main resources provisioned
 - VPC with public and private subnets
@@ -11,7 +11,7 @@ Main resources provisioned
 - Aurora (RDS) cluster + instance
 - RDS credentials stored in AWS Secrets Manager (created when not provided)
 - S3 bucket for frontend + CloudFront distribution (Origin Access Control)
-- Two ECR repositories (`dev-regenesis-api`, `dev-regenesis-queue`)
+- Two ECR repositories (`beta-regenesis-api`, `beta-regenesis-queue`)
 
 NOTE: These resources will incur AWS charges. Destroy the environment when you no longer need it.
 
@@ -27,18 +27,18 @@ NOTE: These resources will incur AWS charges. Destroy the environment when you n
 - `ecr.tf` - ECR repositories
 - `iam.tf` - IAM roles, instance profile
 - `outputs.tf` - useful outputs
-- `env/` - environment variable files (dev/staging/prod)
+- `env/` - environment variable files (beta/staging/prod)
 
 ## Prerequisites
-- Terraform >= 1.3 (this workspace used v1.13.3 during development)
+- Terraform >= 1.3 (this workspace used v1.13.3 during betaelopment)
 - AWS CLI configured or AWS credentials available via environment variables
-- A public SSH key for EC2 instances (set in `env/dev.tfvars` as `public_key`)
+- A public SSH key for EC2 instances (set in `env/beta.tfvars` as `public_key`)
 
-## Quick start (dev)
+## Quick start (beta)
 
 1. Ensure the S3 backend bucket exists (example used: `terraform-state-mashhoud` in `us-east-1`).
 
-2. Update `env/dev.tfvars` with your environment-specific values. Key variables to check:
+2. Update `env/beta.tfvars` with your environment-specific values. Key variables to check:
    - `aws_region` (e.g. `us-east-1`)
    - `public_key` (the public key material or key name depending on how you manage keys)
    - `frontend_bucket_name` (leave empty to use a generated name)
@@ -48,20 +48,24 @@ NOTE: These resources will incur AWS charges. Destroy the environment when you n
 
 ```bash
 cd /path/to/terraform_aws_regenesis
-terraform init -backend-config="bucket=terraform-state-mashhoud" -backend-config="key=dev/terraform.tfstate" -backend-config="region=us-east-1"
+terraform init \
+  -backend-config="bucket=terraform-state-beta-regenesis" \
+  -backend-config="key=beta/terraform.tfstate" \
+  -backend-config="region=us-east-1"
+
 ```
 
 4. Create/select the workspace and plan:
 
 ```bash
-terraform workspace new dev || terraform workspace select dev
-terraform plan -var-file=env/dev.tfvars -out=dev_verify.tfplan
+terraform workspace new beta || terraform workspace select beta
+terraform plan -var-file=env/beta.tfvars -out=beta_verify.tfplan
 ```
 
 5. Apply the saved plan non-interactively:
 
 ```bash
-terraform apply -input=false -auto-approve dev_verify.tfplan
+terraform apply -input=false -auto-approve beta_verify.tfplan
 ```
 
 6. View outputs:
@@ -72,12 +76,12 @@ terraform output -json
 
 ## Retrieving RDS credentials (Secrets Manager)
 
-If the `db_secret_name` variable wasn't provided, Terraform will create a Secrets Manager secret (example in dev: `dev/rds-db-password`). The secret contains the DB credentials and a generated password.
+If the `db_secret_name` variable wasn't provided, Terraform will create a Secrets Manager secret (example in beta: `beta/rds-db-password`). The secret contains the DB credentials and a generated password.
 
 Retrieve it using the AWS CLI (you must have permission to read the secret):
 
 ```bash
-aws secretsmanager get-secret-value --secret-id dev/rds-db-password --region us-east-1
+aws secretsmanager get-secret-value --secret-id beta/rds-db-password --region us-east-1
 ```
 
 The `secret_string` typically contains JSON with the username/password. Handle it carefully and do not commit secret values into source control.
@@ -115,7 +119,7 @@ ssh -i /path/to/your_private_key.pem -N -L 3306:<rds_cluster_endpoint>:3306 ubun
 When finished, run:
 
 ```bash
-terraform destroy -var-file=env/dev.tfvars -auto-approve
+terraform destroy -var-file=env/beta.tfvars -auto-approve
 ```
 
 ## Optional improvements (suggested)

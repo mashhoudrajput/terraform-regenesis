@@ -67,7 +67,7 @@ resource "aws_ssm_association" "deploy_public_to_app" {
   name = aws_ssm_document.append_public_key.name
   targets {
     key    = "InstanceIds"
-    values = [aws_instance.app.id]
+    values = concat([aws_instance.app.id], var.create_app2 ? [aws_instance.app2[0].id] : [])
   }
 }
 
