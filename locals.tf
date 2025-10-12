@@ -1,4 +1,6 @@
 locals {
   environment = terraform.workspace != "" ? terraform.workspace : var.environment
-  name_prefix = "${local.environment}-regenesis"
+  service     = "regenesis"
+  region      = var.aws_region
+  # Note: use the pattern ${local.environment}-${local.service}-${component}-${local.region}
 }

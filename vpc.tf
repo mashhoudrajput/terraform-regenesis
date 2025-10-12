@@ -2,7 +2,9 @@ resource "aws_vpc" "this" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
-  tags                 = { Name = "${local.name_prefix}-vpc" }
+  tags = {
+    Name = "${local.environment}-${local.service}-vpc-${local.region}"
+  }
 }
 
 resource "aws_subnet" "public" {
@@ -11,7 +13,9 @@ resource "aws_subnet" "public" {
   cidr_block              = each.value
   map_public_ip_on_launch = true
   availability_zone       = element(data.aws_availability_zones.available.names, index(var.public_subnets, each.value))
-  tags                    = { Name = "${local.name_prefix}-public-${each.value}" }
+  tags = {
+    Name = "${local.environment}-${local.service}-public-${each.value}-${local.region}"
+  }
 }
 
 resource "aws_subnet" "private" {
@@ -19,17 +23,23 @@ resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.this.id
   cidr_block        = each.value
   availability_zone = element(data.aws_availability_zones.available.names, index(var.private_subnets, each.value))
-  tags              = { Name = "${local.name_prefix}-private-${each.value}" }
+  tags = {
+    Name = "${local.environment}-${local.service}-private-${each.value}-${local.region}"
+  }
 }
 
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.this.id
-  tags   = { Name = "${local.name_prefix}-igw" }
+  tags = {
+    Name = "${local.environment}-${local.service}-igw-${local.region}"
+  }
 }
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.this.id
-  tags   = { Name = "${local.name_prefix}-public-rt" }
+  tags = {
+    Name = "${local.environment}-${local.service}-public-rt-${local.region}"
+  }
 }
 
 resource "aws_route" "public_internet" {
@@ -55,7 +65,9 @@ resource "aws_nat_gateway" "nat" {
 
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.this.id
-  tags   = { Name = "${local.name_prefix}-private-rt" }
+  tags = {
+    Name = "${local.environment}-${local.service}-private-rt-${local.region}"
+  }
 }
 
 resource "aws_route" "private_to_nat" {

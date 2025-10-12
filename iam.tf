@@ -9,7 +9,7 @@ data "aws_iam_policy_document" "ec2_assume" {
 }
 
 resource "aws_iam_role" "ec2_role" {
-  name               = "${local.name_prefix}-ec2-role"
+  name               = "${local.environment}-${local.service}-ec2-role-${local.region}"
   assume_role_policy = data.aws_iam_policy_document.ec2_assume.json
 }
 
@@ -20,7 +20,7 @@ resource "aws_iam_role_policy_attachment" "ssm_attach" {
 
 resource "aws_iam_role_policy" "secret_access" {
   count = length(var.db_secret_name) > 0 ? 1 : 0
-  name  = "${local.name_prefix}-ec2-secrets-policy"
+  name  = "${local.environment}-${local.service}-ec2-secrets-policy-${local.region}"
   role  = aws_iam_role.ec2_role.id
 
   policy = jsonencode({
@@ -39,6 +39,6 @@ resource "aws_iam_role_policy" "secret_access" {
 }
 
 resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "${local.name_prefix}-ec2-profile"
+  name = "${local.environment}-${local.service}-ec2-profile-${local.region}"
   role = aws_iam_role.ec2_role.name
 }

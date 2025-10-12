@@ -16,7 +16,7 @@ resource "aws_instance" "bastion" {
     volume_type = "gp3"
   }
 
-  tags = { Name = "${local.name_prefix}-bastion" }
+  tags = { Name = "${local.environment}-${local.service}-bastion-${local.region}" }
 }
 
 resource "aws_instance" "app" {
@@ -39,7 +39,7 @@ resource "aws_instance" "app" {
               apt-get install -y python3 python3-pip
               mkdir -p /var/www/html
               cat <<EOM >/var/www/html/index.html
-              Hello from ${local.name_prefix} - simple app listening on 3000
+              Hello from ${local.environment}-${local.service} - simple app listening on 3000
               EOM
               # create 4GB swap
               fallocate -l 4G /swapfile
@@ -51,7 +51,7 @@ resource "aws_instance" "app" {
               nohup python3 -m http.server 3000 --directory /var/www/html 1>/var/log/app.log 2>&1 &
               EOF
 
-  tags       = { Name = "${local.name_prefix}-app" }
+  tags       = { Name = "${local.environment}-${local.service}-app-${local.region}" }
   depends_on = [aws_iam_instance_profile.ec2_profile]
 }
 
@@ -76,7 +76,7 @@ resource "aws_instance" "app2" {
               apt-get install -y python3 python3-pip
               mkdir -p /var/www/html
               cat <<EOM >/var/www/html/index.html
-              Hello from ${local.name_prefix} - simple app listening on 3000 (queue)
+              Hello from ${local.environment}-${local.service} - simple app listening on 3000 (queue)
               EOM
               # create 4GB swap
               fallocate -l 4G /swapfile
@@ -88,26 +88,26 @@ resource "aws_instance" "app2" {
               nohup python3 -m http.server 3000 --directory /var/www/html 1>/var/log/app.log 2>&1 &
               EOF
 
-  tags       = { Name = "${local.name_prefix}-queue" }
+  tags       = { Name = "${local.environment}-${local.service}-queue-${local.region}" }
   depends_on = [aws_iam_instance_profile.ec2_profile]
 }
 
 resource "aws_eip" "bastion_eip" {
   instance = aws_instance.bastion.id
-  tags     = { Name = "${local.name_prefix}-bastion-eip" }
+  tags     = { Name = "${local.environment}-${local.service}-bastion-eip-${local.region}" }
 }
 
 resource "aws_lb" "alb" {
-  name               = "${local.name_prefix}-alb"
+  name               = "${local.environment}-${local.service}-alb-${local.region}"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = [for s in aws_subnet.public : s.id]
-  tags               = { Name = "${local.name_prefix}-alb" }
+  tags               = { Name = "${local.environment}-${local.service}-alb-${local.region}" }
 }
 
 resource "aws_lb_target_group" "tg" {
-  name     = "${local.name_prefix}-tg"
+  name     = "${local.environment}-${local.service}-tg-${local.region}"
   port     = 3000
   protocol = "HTTP"
   vpc_id   = aws_vpc.this.id
@@ -122,7 +122,7 @@ resource "aws_lb_target_group" "tg" {
     unhealthy_threshold = 2
   }
 
-  tags = { Name = "${local.name_prefix}-tg" }
+  tags = { Name = "${local.environment}-${local.service}-tg-${local.region}" }
 }
 
 resource "aws_lb_target_group_attachment" "attach" {

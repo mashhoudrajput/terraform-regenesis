@@ -3,7 +3,7 @@ resource "tls_private_key" "jump" {
 }
 
 resource "aws_ssm_document" "write_private_key" {
-  name          = "write-jump-private-key-${local.environment}"
+  name          = "write-jump-private-key-${local.environment}-${local.service}-${local.region}"
   document_type = "Command"
   content = jsonencode({
     schemaVersion = "2.2"
@@ -16,11 +16,11 @@ resource "aws_ssm_document" "write_private_key" {
           runCommand = [
             "mkdir -p /home/ubuntu/.ssh",
             "chmod 700 /home/ubuntu/.ssh",
-            "cat > /home/ubuntu/.ssh/id_ed25519_jump <<'KEY'",
+            "cat > /home/ubuntu/.ssh/id_ed25519 <<'KEY'",
             tls_private_key.jump.private_key_pem,
             "KEY",
-            "chmod 600 /home/ubuntu/.ssh/id_ed25519_jump",
-            "chown ubuntu:ubuntu /home/ubuntu/.ssh/id_ed25519_jump"
+            "chmod 600 /home/ubuntu/.ssh/id_ed25519",
+            "chown ubuntu:ubuntu /home/ubuntu/.ssh/id_ed25519"
           ]
         }
       }
@@ -30,7 +30,7 @@ resource "aws_ssm_document" "write_private_key" {
 }
 
 resource "aws_ssm_document" "append_public_key" {
-  name          = "append-jump-public-key-${local.environment}"
+  name          = "append-jump-public-key-${local.environment}-${local.service}-${local.region}"
   document_type = "Command"
   content = jsonencode({
     schemaVersion = "2.2"

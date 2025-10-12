@@ -23,3 +23,4 @@ tfplan.*
 *.swp
 *.swo
 .DS_Store
+plan.betaenv/*.tfvars
