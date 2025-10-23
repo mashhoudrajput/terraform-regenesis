@@ -496,13 +496,63 @@ terraform plan -destroy -var-file=env/${ENV}.tfvars
 
 ### Step 3: Destroy Infrastructure
 
+#### Quick Destroy Commands for All Environments:
+
+**QA Environment:**
 ```bash
-# Destroy all resources
+# With confirmation (recommended)
+terraform destroy -var-file=env/qa.tfvars
+
+# Auto-approve (no confirmation - use with caution!)
+terraform destroy -var-file=env/qa.tfvars -auto-approve
+```
+
+**Beta Environment:**
+```bash
+# With confirmation
+terraform destroy -var-file=env/beta.tfvars
+
+# Auto-approve
+terraform destroy -var-file=env/beta.tfvars -auto-approve
+```
+
+**Production Environment:**
+```bash
+# Always use confirmation for production!
+terraform destroy -var-file=env/prod.tfvars
+
+# ⚠️ NEVER use auto-approve for production unless absolutely certain!
+```
+
+#### Using Environment Variable:
+
+```bash
+# Set environment
+export ENV=qa  # or beta, prod
+
+# Destroy with confirmation
 terraform destroy -var-file=env/${ENV}.tfvars
 
 # Confirm by typing 'yes' when prompted
 # This will take approximately 10-15 minutes
 ```
+
+#### Resources Being Destroyed:
+
+Total: ~63-66 resources (depending on configuration)
+- 3 EC2 instances (bastion, api, queue)
+- 1 NAT Gateway + EIP
+- 1 VPC with subnets, route tables, IGW
+- 1 Application Load Balancer + target group
+- 1 RDS Aurora MySQL cluster + instance
+- 2 S3 buckets (frontend, public-scan)
+- 2 CloudFront distributions
+- 2 ECR repositories
+- 3 VPC Endpoints (SSM)
+- 5-6 Security groups
+- IAM roles and policies
+- SSM documents and associations
+- TLS private keys
 
 **Destruction Order:**
 1. EC2 instances and load balancers (3-5 minutes)
@@ -895,14 +945,33 @@ terraform output -var-file=env/prod.tfvars -raw bastion_public_ip
 ssh ubuntu@<PROD_BASTION_IP>
 
 # ============== DESTRUCTION ==============
-# QA
+# QA - with confirmation
+terraform destroy -var-file=env/qa.tfvars
+
+# QA - auto-approve (no confirmation)
 terraform destroy -var-file=env/qa.tfvars -auto-approve
 
-# Beta
+# Beta - with confirmation
+terraform destroy -var-file=env/beta.tfvars
+
+# Beta - auto-approve
 terraform destroy -var-file=env/beta.tfvars -auto-approve
 
-# Production (be very careful!)
+# Production - always with confirmation!
 terraform destroy -var-file=env/prod.tfvars
+# ⚠️ NEVER use -auto-approve for production!
+
+# ============== WHAT GETS DESTROYED ==============
+# Total: ~63-66 resources per environment
+# - 3 EC2 instances (bastion, api, queue)
+# - NAT Gateway + EIP
+# - ALB + Target Group
+# - RDS Aurora cluster (with final snapshot)
+# - 2 S3 buckets + 2 CloudFront distributions
+# - 2 ECR repositories
+# - VPC, Subnets, Route Tables
+# - Security Groups, IAM Roles
+# - Time: ~10-15 minutes
 ```
 
 ### Resource Naming Convention
