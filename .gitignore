@@ -14,7 +14,7 @@ plan.*
 tfplan.*
 
 # Sensitive Variable Files
-*.tfvars
+#*.tfvars
 *.tfvars.json
 !*.tfvars.example
 
