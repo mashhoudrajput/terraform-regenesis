@@ -10,11 +10,6 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-data "aws_secretsmanager_secret_version" "db_secret" {
-  secret_id = var.db_secret_name
-}
-
 locals {
-  effective_ami       = length(var.ami_id) > 0 ? var.ami_id : data.aws_ami.ubuntu.id
-  rds_master_password = jsondecode(data.aws_secretsmanager_secret_version.db_secret.secret_string)["password"]
+  effective_ami = length(var.ami_id) > 0 ? var.ami_id : data.aws_ami.ubuntu.id
 }

@@ -54,13 +54,28 @@ resource "aws_route_table_association" "public_assoc" {
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_eip" "nat" {}
+resource "aws_eip" "nat" {
+  count  = var.create_nat_gateway ? 1 : 0
+  domain = "vpc"
+
+  tags = {
+    Name        = "${local.environment}-${local.service}-nat-eip-${local.region}"
+    Environment = local.environment
+    ManagedBy   = "Terraform"
+  }
+}
 
 resource "aws_nat_gateway" "nat" {
   count         = var.create_nat_gateway ? 1 : 0
-  allocation_id = aws_eip.nat.id
+  allocation_id = aws_eip.nat[0].id
   subnet_id     = element(values(aws_subnet.public), 0).id
   depends_on    = [aws_internet_gateway.igw]
+
+  tags = {
+    Name        = "${local.environment}-${local.service}-nat-gateway-${local.region}"
+    Environment = local.environment
+    ManagedBy   = "Terraform"
+  }
 }
 
 resource "aws_route_table" "private" {

@@ -35,19 +35,43 @@ resource "aws_instance" "app" {
   user_data = <<-EOF
               #!/bin/bash
               set -e
+              
+              # Update system
               apt-get update -y
+              
+              # Install AWS CLI
+              apt-get install -y awscli unzip curl
+              
+              # Install Docker
+              apt-get install -y ca-certificates gnupg lsb-release
+              mkdir -p /etc/apt/keyrings
+              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+              echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+              apt-get update -y
+              apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+              systemctl enable docker
+              systemctl start docker
+              
+              # Add ubuntu user to docker group
+              usermod -aG docker ubuntu
+              
+              # Install Python (for test server)
               apt-get install -y python3 python3-pip
+              
+              # Create test app
               mkdir -p /var/www/html
               cat <<EOM >/var/www/html/index.html
-              Hello from ${local.environment}-${local.service} - simple app listening on 3000
+              Hello from ${local.environment}-${local.service}-api - AWS CLI and Docker installed
               EOM
-              # create 4GB swap
+              
+              # Create 4GB swap
               fallocate -l 4G /swapfile
               chmod 600 /swapfile
               mkswap /swapfile
               swapon /swapfile
               echo '/swapfile none swap sw 0 0' >> /etc/fstab
-
+              
+              # Start test server
               nohup python3 -m http.server 3000 --directory /var/www/html 1>/var/log/app.log 2>&1 &
               EOF
 
@@ -72,19 +96,43 @@ resource "aws_instance" "app2" {
   user_data = <<-EOF
               #!/bin/bash
               set -e
+              
+              # Update system
               apt-get update -y
+              
+              # Install AWS CLI
+              apt-get install -y awscli unzip curl
+              
+              # Install Docker
+              apt-get install -y ca-certificates gnupg lsb-release
+              mkdir -p /etc/apt/keyrings
+              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+              echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+              apt-get update -y
+              apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+              systemctl enable docker
+              systemctl start docker
+              
+              # Add ubuntu user to docker group
+              usermod -aG docker ubuntu
+              
+              # Install Python (for test server)
               apt-get install -y python3 python3-pip
+              
+              # Create test app
               mkdir -p /var/www/html
               cat <<EOM >/var/www/html/index.html
-              Hello from ${local.environment}-${local.service} - simple app listening on 3000 (queue)
+              Hello from ${local.environment}-${local.service}-queue - AWS CLI and Docker installed
               EOM
-              # create 4GB swap
+              
+              # Create 4GB swap
               fallocate -l 4G /swapfile
               chmod 600 /swapfile
               mkswap /swapfile
               swapon /swapfile
               echo '/swapfile none swap sw 0 0' >> /etc/fstab
-
+              
+              # Start test server
               nohup python3 -m http.server 3000 --directory /var/www/html 1>/var/log/app.log 2>&1 &
               EOF
 
@@ -127,17 +175,18 @@ resource "aws_lb_target_group" "tg" {
 
 resource "aws_lb_target_group_attachment" "attach" {
   target_group_arn = aws_lb_target_group.tg.arn
-  # attach both app instances to the target group
+  # Only API server is attached to ALB, queue server handles background jobs
   target_id = aws_instance.app.id
   port      = 3000
 }
 
-resource "aws_lb_target_group_attachment" "attach_app2" {
-  count            = var.create_app2 ? 1 : 0
-  target_group_arn = aws_lb_target_group.tg.arn
-  target_id        = aws_instance.app2[0].id
-  port             = 3000
-}
+# Queue server (app2) is NOT attached to ALB - it handles background processing only
+# resource "aws_lb_target_group_attachment" "attach_app2" {
+#   count            = var.create_app2 ? 1 : 0
+#   target_group_arn = aws_lb_target_group.tg.arn
+#   target_id        = aws_instance.app2[0].id
+#   port             = 3000
+# }
 
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.alb.arn

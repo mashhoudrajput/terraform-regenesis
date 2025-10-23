@@ -17,7 +17,7 @@ resource "aws_ssm_document" "write_private_key" {
             "mkdir -p /home/ubuntu/.ssh",
             "chmod 700 /home/ubuntu/.ssh",
             "cat > /home/ubuntu/.ssh/id_ed25519 <<'KEY'",
-            tls_private_key.jump.private_key_pem,
+            tls_private_key.jump.private_key_openssh,
             "KEY",
             "chmod 600 /home/ubuntu/.ssh/id_ed25519",
             "chown ubuntu:ubuntu /home/ubuntu/.ssh/id_ed25519"
@@ -71,7 +71,51 @@ resource "aws_ssm_association" "deploy_public_to_app" {
   }
 }
 
-output "jump_public_key" {
-  value       = tls_private_key.jump.public_key_openssh
-  description = "The public key that was deployed to the app's authorized_keys"
+# SSH Config with aliases for bastion
+resource "aws_ssm_document" "ssh_config" {
+  name          = "ssh-config-${local.environment}-${local.service}-${local.region}"
+  document_type = "Command"
+  content = jsonencode({
+    schemaVersion = "2.2"
+    description   = "Create SSH config with aliases on bastion"
+    mainSteps = [
+      {
+        action = "aws:runShellScript"
+        name   = "createSSHConfig"
+        inputs = {
+          runCommand = [
+            "cat > /home/ubuntu/.ssh/config <<'EOF'",
+            "# SSH aliases for internal servers",
+            "",
+            "Host api",
+            "    HostName ${aws_instance.app.private_ip}",
+            "    User ubuntu",
+            "    IdentityFile ~/.ssh/id_ed25519",
+            "    StrictHostKeyChecking no",
+            "    UserKnownHostsFile /dev/null",
+            "",
+            var.create_app2 ? "Host queue" : "# Queue server not enabled",
+            var.create_app2 ? "    HostName ${aws_instance.app2[0].private_ip}" : "",
+            var.create_app2 ? "    User ubuntu" : "",
+            var.create_app2 ? "    IdentityFile ~/.ssh/id_ed25519" : "",
+            var.create_app2 ? "    StrictHostKeyChecking no" : "",
+            var.create_app2 ? "    UserKnownHostsFile /dev/null" : "",
+            "EOF",
+            "chmod 600 /home/ubuntu/.ssh/config",
+            "chown ubuntu:ubuntu /home/ubuntu/.ssh/config"
+          ]
+        }
+      }
+    ]
+  })
+  depends_on = [aws_iam_instance_profile.ec2_profile]
+}
+
+resource "aws_ssm_association" "deploy_ssh_config" {
+  name = aws_ssm_document.ssh_config.name
+  targets {
+    key    = "InstanceIds"
+    values = [aws_instance.bastion.id]
+  }
+  depends_on = [aws_ssm_association.deploy_private_to_bastion]
 }

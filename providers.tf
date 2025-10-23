@@ -1,24 +1,31 @@
 terraform {
+  required_version = ">= 1.0"
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 4.0"
+      version = "~> 5.0"
     }
     random = {
       source  = "hashicorp/random"
-      version = ">= 3.0"
+      version = "~> 3.0"
     }
     tls = {
       source  = "hashicorp/tls"
-      version = ">= 3.0"
+      version = "~> 4.0"
     }
   }
 }
 
 provider "aws" {
-  region     = var.aws_region
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
-  # You can optionally use profile instead of keys:
-  # profile = var.aws_profile
+  region  = var.aws_region
+  profile = var.aws_profile
+
+  default_tags {
+    tags = {
+      Project     = "Regenesis"
+      Environment = var.environment
+      ManagedBy   = "Terraform"
+    }
+  }
 }

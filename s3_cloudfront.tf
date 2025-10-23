@@ -1,9 +1,13 @@
 # Create S3 bucket
 resource "aws_s3_bucket" "frontend" {
-  bucket = length(var.frontend_bucket_name) > 0 ? var.frontend_bucket_name : "frontend-${local.environment}-${random_id.bucket_suffix.hex}"
+  bucket = length(var.frontend_bucket_name) > 0 ? var.frontend_bucket_name : "${local.environment}-${local.service}-frontend-${random_id.bucket_suffix.hex}"
 }
 
 resource "random_id" "bucket_suffix" {
+  byte_length = 4
+}
+
+resource "random_id" "bucket_suffix2" {
   byte_length = 4
 }
 
@@ -145,6 +149,27 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
         Condition = {
           StringEquals = {
             "AWS:SourceArn" = aws_cloudfront_distribution.frontend_cdn.arn
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_s3_bucket_policy" "public_scan_policy" {
+  bucket = aws_s3_bucket.public_scan.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid       = "AllowCloudFrontServicePrincipal"
+        Effect    = "Allow"
+        Principal = { Service = "cloudfront.amazonaws.com" }
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.public_scan.arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.public_scan_cdn.arn
           }
         }
       }
