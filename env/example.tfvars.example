@@ -1,0 +1,39 @@
+# Example Environment Configuration Template
+# Copy this file to qa.tfvars, beta.tfvars, or prod.tfvars and update the values
+
+# AWS Configuration
+aws_region  = "us-east-1"
+aws_profile = "default" # Update to your AWS CLI profile name
+
+# Environment
+environment = "qa" # or "beta", "prod"
+
+# VPC Configuration (Update for each environment)
+# QA: 10.1.0.0/16, Beta: 10.4.0.0/16, Prod: 10.3.0.0/16
+vpc_cidr        = "10.1.0.0/16"
+public_subnets  = ["10.1.1.0/24", "10.1.2.0/24"]
+private_subnets = ["10.1.11.0/24", "10.1.12.0/24"]
+
+# Networking
+create_nat_gateway = true # Enable NAT Gateway for internet access
+
+# SSH Configuration
+ssh_key_name        = "qa-regenesis-keypair" # Update: qa-, beta-, or prod-
+ssh_public_key_path = "~/.ssh/id_rsa.pub"
+
+# Compute Resources
+bastion_instance_type = "t3.micro"
+app_instance_type     = "t3.micro"
+create_app2           = true        # Enable queue server
+bastion_allowed_cidr  = "0.0.0.0/0" # Restrict to your IP in production
+
+# Database Configuration
+rds_instance_class = "db.t3.medium"
+db_username        = "admin"
+db_name            = "regenesis_qa" # Update: regenesis_qa, regenesis_beta, regenesis_prod
+db_password        = "CHANGE_ME_TO_STRONG_PASSWORD_MIN_8_CHARS"
+# Note: After deployment, manually migrate to AWS Secrets Manager via RDS console
+
+# S3 Configuration
+frontend_bucket_name = "" # Auto-generate with random suffix
+
