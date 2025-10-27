@@ -36,11 +36,30 @@ resource "aws_instance" "app" {
               #!/bin/bash
               set -e
               
+              # Wait for internet connectivity (NAT Gateway to be ready)
+              echo "Waiting for internet connectivity..."
+              for i in {1..30}; do
+                if ping -c 1 8.8.8.8 &>/dev/null; then
+                  echo "Internet connectivity established"
+                  break
+                fi
+                echo "Attempt $i: Waiting for internet..."
+                sleep 10
+              done
+              
               # Update system
               apt-get update -y
               
-              # Install AWS CLI
-              apt-get install -y awscli unzip curl
+              # Install prerequisites
+              apt-get install -y unzip curl
+              
+              # Install AWS CLI v2
+              cd /tmp
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+              unzip -q awscliv2.zip
+              ./aws/install
+              rm -rf aws awscliv2.zip
+              cd /root
               
               # Install Docker
               apt-get install -y ca-certificates gnupg lsb-release
@@ -76,7 +95,7 @@ resource "aws_instance" "app" {
               EOF
 
   tags       = { Name = "${local.environment}-${local.service}-app-${local.region}" }
-  depends_on = [aws_iam_instance_profile.ec2_profile]
+  depends_on = [aws_nat_gateway.nat, aws_route.private_to_nat]
 }
 
 resource "aws_instance" "app2" {
@@ -97,11 +116,30 @@ resource "aws_instance" "app2" {
               #!/bin/bash
               set -e
               
+              # Wait for internet connectivity (NAT Gateway to be ready)
+              echo "Waiting for internet connectivity..."
+              for i in {1..30}; do
+                if ping -c 1 8.8.8.8 &>/dev/null; then
+                  echo "Internet connectivity established"
+                  break
+                fi
+                echo "Attempt $i: Waiting for internet..."
+                sleep 10
+              done
+              
               # Update system
               apt-get update -y
               
-              # Install AWS CLI
-              apt-get install -y awscli unzip curl
+              # Install prerequisites
+              apt-get install -y unzip curl
+              
+              # Install AWS CLI v2
+              cd /tmp
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+              unzip -q awscliv2.zip
+              ./aws/install
+              rm -rf aws awscliv2.zip
+              cd /root
               
               # Install Docker
               apt-get install -y ca-certificates gnupg lsb-release
@@ -137,7 +175,7 @@ resource "aws_instance" "app2" {
               EOF
 
   tags       = { Name = "${local.environment}-${local.service}-queue-${local.region}" }
-  depends_on = [aws_iam_instance_profile.ec2_profile]
+  depends_on = [aws_nat_gateway.nat, aws_route.private_to_nat]
 }
 
 resource "aws_eip" "bastion_eip" {
